@@ -19,3 +19,7 @@
 35 * * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python collect_futures_data.py >> logs/cron.log 2>&1
 # Dead-man switch (ping a healthchecks.io si el pipeline esta sano): cada 15 min
 7,22,37,52 * * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python heartbeat.py >> logs/cron.log 2>&1
+# Order flow (aggTrades D-1 -> barras delta 5m, 0 tokens): diario 03:30
+30 3 * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python orderflow_collector.py >> logs/cron.log 2>&1
+# Etiquetador de noticias (Ollama local, $0): horario al :50
+50 * * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python news_tagger.py >> logs/cron.log 2>&1
