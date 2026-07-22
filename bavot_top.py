@@ -25,6 +25,11 @@ from rich.text import Text
 from storage import connect
 
 REFRESH_S = 10
+# la consola física (TERM=linux) no tiene glifos redondeados
+import os
+_CONSOLE = os.environ.get("TERM") == "linux"
+BOX_PANEL = box.ASCII if _CONSOLE else box.ROUNDED
+BOX_TABLE = box.ASCII_DOUBLE_HEAD if _CONSOLE else box.SIMPLE_HEAD
 
 
 def fetch_prices() -> dict:
@@ -81,7 +86,7 @@ def build() -> Group:
                                  "green" if tot_real >= 0 else "red"),
     )
 
-    eng_t = Table(box=box.SIMPLE_HEAD, expand=True, pad_edge=False)
+    eng_t = Table(box=BOX_TABLE, expand=True, pad_edge=False)
     for col in ("motor", "abiertas", "flotante", "exposición neta",
                 "cerradas", "realizado", "efectividad"):
         eng_t.add_column(col, justify="right")
@@ -92,7 +97,7 @@ def build() -> Group:
 
     positions.sort(key=lambda t: t[4], reverse=True)
     shown = positions[:6] + positions[-6:] if len(positions) > 12 else positions
-    pos_t = Table(box=box.SIMPLE_HEAD, expand=True, pad_edge=False,
+    pos_t = Table(box=BOX_TABLE, expand=True, pad_edge=False,
                   title="mejores y peores posiciones", title_style="dim")
     for col in ("motor", "símbolo", "dir", "tamaño", "flotante"):
         pos_t.add_column(col, justify="right")
@@ -117,10 +122,10 @@ def build() -> Group:
                    else "sin señales todavía")
 
     return Group(
-        Panel(header, box=box.ROUNDED),
+        Panel(header, box=BOX_PANEL),
         eng_t,
         pos_t,
-        Panel(t1_body, title="T1 señales de Telegram", box=box.ROUNDED,
+        Panel(t1_body, title="T1 señales de Telegram", box=BOX_PANEL,
               title_align="left"),
         Text(f"refresh {REFRESH_S}s — Ctrl-C para salir", style="dim"),
     )
