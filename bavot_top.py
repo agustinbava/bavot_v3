@@ -30,6 +30,8 @@ import os
 _CONSOLE = os.environ.get("TERM") == "linux"
 BOX_PANEL = box.ASCII if _CONSOLE else box.ROUNDED
 BOX_TABLE = box.ASCII_DOUBLE_HEAD if _CONSOLE else box.SIMPLE_HEAD
+# "dim" es ilegible en la consola física (gris oscuro sobre negro)
+DIM = "cyan" if _CONSOLE else "dim"
 
 
 def fetch_prices() -> dict:
@@ -42,7 +44,7 @@ def fetch_prices() -> dict:
 
 
 def money(v: float) -> Text:
-    style = "green" if v > 0 else ("red" if v < 0 else "dim")
+    style = "green" if v > 0 else ("red" if v < 0 else DIM)
     return Text(f"{v:+.2f}", style=style)
 
 
@@ -78,7 +80,7 @@ def build() -> Group:
     tot_real = sum(e[5] for e in engines)
     header = Text.assemble(
         ("BAVOT ", "bold cyan"),
-        (datetime.now().strftime("%d/%m %H:%M:%S"), "dim"),
+        (datetime.now().strftime("%d/%m %H:%M:%S"), DIM),
         ("   BTC ", "bold"), (f"{btc:,.0f}  ", "yellow"),
         ("flotante ", "bold"), (f"{tot_flo:+.2f}  ",
                                 "green" if tot_flo >= 0 else "red"),
@@ -98,7 +100,7 @@ def build() -> Group:
     positions.sort(key=lambda t: t[4], reverse=True)
     shown = positions[:6] + positions[-6:] if len(positions) > 12 else positions
     pos_t = Table(box=BOX_TABLE, expand=True, pad_edge=False,
-                  title="mejores y peores posiciones", title_style="dim")
+                  title="mejores y peores posiciones", title_style=DIM)
     for col in ("motor", "símbolo", "dir", "tamaño", "flotante"):
         pos_t.add_column(col, justify="right")
     for eng, sym, d, usd, u in shown:
@@ -127,7 +129,7 @@ def build() -> Group:
         pos_t,
         Panel(t1_body, title="T1 señales de Telegram", box=BOX_PANEL,
               title_align="left"),
-        Text(f"refresh {REFRESH_S}s — Ctrl-C para salir", style="dim"),
+        Text(f"refresh {REFRESH_S}s — Ctrl-C para salir", style=DIM),
     )
 
 
