@@ -1,0 +1,22 @@
+[project]
+name = "scalp-analyzer"
+version = "0.1.0"
+description = "Intraday scalping technical analysis: OHLCV + indicators + Anthropic LLM verdicts"
+requires-python = ">=3.12"  # pandas-ta 0.4.x requires Python >=3.12
+dependencies = [
+    "anthropic>=0.40",
+    "requests>=2.31",
+    "PyYAML>=6.0",
+    "python-dotenv>=1.0",
+    "rich>=13.7",
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "pandas-ta>=0.4.67b0",
+    "ib_insync>=0.9.86",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

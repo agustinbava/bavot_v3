@@ -1,0 +1,18 @@
+# secretos y credenciales — NUNCA al repo
+.env
+*.session
+*.session-journal
+
+# datos vivos (journals, mensajes privados de Telegram) — viajan por backup, no por git
+bavot.db
+bavot_backup*.db
+
+# entorno y artefactos
+.venv/
+__pycache__/
+.pytest_cache/
+logs/
+runs/
+data/
+*.tgz
+crontab.ubuntu

@@ -1,0 +1,162 @@
+# Watchlist + parameters for the scalping analyzer.
+# type must be "stock" (via IBKR) or "crypto" (via Binance public API).
+
+watchlist:
+  # Acciones / ETFs (vía IBKR)
+  - { symbol: "NVDA", type: "stock" }
+  - { symbol: "TSLA", type: "stock" }
+  - { symbol: "META", type: "stock" }
+  - { symbol: "AMD", type: "stock" }
+  - { symbol: "MU", type: "stock" }
+  - { symbol: "PLTR", type: "stock" }
+  - { symbol: "TQQQ", type: "stock" }
+  - { symbol: "COIN", type: "stock" }
+  - { symbol: "JPM", type: "stock" }
+  - { symbol: "SMH", type: "stock" }
+  - { symbol: "AVGO", type: "stock" }
+  - { symbol: "VGT", type: "stock" }
+  - { symbol: "MELI", type: "stock" }
+  - { symbol: "FXI", type: "stock" }
+  - { symbol: "AMZN", type: "stock" }
+  - { symbol: "AAPL", type: "stock" }
+  - { symbol: "UNH", type: "stock" }
+  # Crypto (universo A5): top por volumen (promedio 30d) con >=400 dias de
+  # historia en Binance. 19 validadas 2026-07-16 + 10 ampliadas 2026-07-16
+  # (combinado revalidado 2/3 tramos vs B&H, igual que el universo original).
+  # Solo alimentan A5.
+  - { symbol: "BTCUSDT", type: "crypto" }
+  - { symbol: "ETHUSDT", type: "crypto" }
+  - { symbol: "ZECUSDT", type: "crypto" }
+  - { symbol: "SOLUSDT", type: "crypto" }
+  - { symbol: "XRPUSDT", type: "crypto" }
+  - { symbol: "BNBUSDT", type: "crypto" }
+  - { symbol: "ONDOUSDT", type: "crypto" }
+  - { symbol: "DEXEUSDT", type: "crypto" }
+  - { symbol: "DOGEUSDT", type: "crypto" }
+  - { symbol: "NEARUSDT", type: "crypto" }
+  - { symbol: "TRXUSDT", type: "crypto" }
+  - { symbol: "SUIUSDT", type: "crypto" }
+  - { symbol: "LTCUSDT", type: "crypto" }
+  - { symbol: "XLMUSDT", type: "crypto" }
+  - { symbol: "WLDUSDT", type: "crypto" }
+  - { symbol: "TAOUSDT", type: "crypto" }
+  - { symbol: "HOMEUSDT", type: "crypto" }
+  - { symbol: "ENAUSDT", type: "crypto" }
+  - { symbol: "PEPEUSDT", type: "crypto" }
+  - { symbol: "ADAUSDT", type: "crypto" }
+  - { symbol: "TONUSDT", type: "crypto" }
+  - { symbol: "AAVEUSDT", type: "crypto" }
+  - { symbol: "UNIUSDT", type: "crypto" }
+  - { symbol: "AVAXUSDT", type: "crypto" }
+  - { symbol: "LINKUSDT", type: "crypto" }
+  - { symbol: "BCHUSDT", type: "crypto" }
+  - { symbol: "TRUMPUSDT", type: "crypto" }
+  - { symbol: "HBARUSDT", type: "crypto" }
+  - { symbol: "INJUSDT", type: "crypto" }
+
+# Timeframes to fetch and analyze (order matters for the payload).
+timeframes: ["5m", "15m", "30m"]
+
+# Candles per timeframe (fetched — indicators use all of them).
+num_candles: 50
+
+# Payload slimming: velas crudas ENVIADAS al modelo (los indicadores se
+# calculan siempre sobre num_candles). El primer timeframe es el de timing.
+payload:
+  timing_candles: 50    # velas enviadas del TF de timing
+  context_candles: 35   # velas enviadas de los demás TFs
+
+# Decimal places for price rounding in the payload (token saving).
+# Values <1 are auto-bumped to more decimals so sub-dollar coins aren't destroyed.
+price_decimals: 2
+
+ibkr:
+  host: "127.0.0.1"
+  port: 4001          # 4001 live Gateway / 4002 paper Gateway / 7497 paper TWS / 7496 live TWS
+  client_id: 1
+  use_rth: true       # Regular Trading Hours only
+
+# Estrategia activa por default (se puede elegir otra por corrida con
+# --strategy NOMBRE). Cada análisis y señal queda taggeado con la usada.
+strategy:
+  name: "A1"
+  description: >-
+    Scalping multi-timeframe conservador. Contexto en 30m, estructura en 15m,
+    timing en 5m. Indicadores: Stoch RSI 3/3/14/14, volumen vs SMA20, high/low
+    de sesión y S/R por swings sobre 50 velas. Requiere alineación de al menos
+    2 de 3 timeframes, R/R mínimo 1.5:1, stop estructural a menos de 0.5% y
+    precio en el borde del rango. Con confianza baja o condiciones mixtas
+    devuelve NO TRADE (frecuente por diseño). Prompt: scalping_analyst.txt,
+    razonamiento adaptativo effort medium.
+
+# Catálogo de estrategias disponibles para --strategy.
+strategies:
+  A1:
+    prompt: "prompts/scalping_analyst.txt"
+    description: >-
+      Scalping multi-timeframe conservador. Contexto en 30m, estructura en
+      15m, timing en 5m. Stoch RSI 3/3/14/14, volumen vs SMA20, S/R por
+      swings. Alineación 2 de 3 timeframes, R/R mínimo 1.5:1, stop menor a
+      0.5%, precio en borde de rango. NO TRADE frecuente por diseño.
+      Fee-aware: el TP debe superar 3x el costo round-trip del broker.
+  A2:
+    prompt: "prompts/scalping_a2_fade.txt"
+    description: >-
+      Reversión a la media agresiva (fade). Caza sobre-extensión después de
+      movimientos fuertes (un muy buen día suele corregir) y entra
+      contratendencia ante señales de agotamiento: divergencias de Stoch RSI,
+      volumen clímax que se seca, falsos quiebres, dobles techos/pisos. No
+      exige alineación de timeframes: alcanza extensión clara + un signo de
+      agotamiento en 15m + gatillo en 5m. R/R mínimo 1.2:1, stop hasta 0.8%.
+      Más señales y más riesgo que A1. Nunca hace fade de un movimiento que
+      sigue acelerando. Fee-aware: el TP debe superar 3x el costo round-trip.
+  A3:
+    prompt: "prompts/a3_crypto_lev.txt"
+    leverage: 10
+    fee_pct_per_side: 0.05   # Binance USDT-M futures taker (sobre nocional)
+    description: >-
+      Scalping de crypto en futuros perpetuos con apalancamiento 10x. Margen
+      USD 100 -> nocional USD 1000. Multi-timeframe (30m contexto, 15m
+      estructura, 5m timing) con Stoch RSI, volumen y S/R por swings. Cada
+      0.1% de movimiento = 1% del capital: stops estructurales obligatorios
+      (0.2-0.6% de precio, o sea 2-6% del capital en riesgo por trade), R/R
+      minimo 1.5, TP minimo 3x el costo round-trip (0.3% de movimiento).
+      Liquidacion (~9%) siempre lejos del stop. NO TRADE si el volumen no
+      confirma.
+  A4:
+    prompt: "prompts/a4_stocks_swing.txt"
+    timeframes: ["1h", "4h", "1d"]
+    entry_window_min: 4320      # 3 dias para gatillar la entrada
+    max_duration_min: 30240     # ~3 semanas maximo en el trade
+    description: >-
+      Swing trading de acciones/ETFs, NO intradiario: posiciones de dias a
+      3 semanas. Contexto en diario (tendencia, niveles mayores), estructura
+      en 4h, timing en 1h. Targets de 6%+ (3x el peaje de IBKR con posiciones
+      de USD 100), stops estructurales de 2-3%, R/R minimo 2. Favorece
+      nombres con beta alta; los ETFs defensivos rara vez califican. Holds
+      overnight y fines de semana permitidos.
+
+anthropic:
+  model: "claude-sonnet-5"
+  max_tokens: 3000       # incluye tokens de razonamiento (thinking) + respuesta
+  effort: "medium"       # low | medium | high — profundidad de razonamiento
+  prompt_path: "prompts/scalping_analyst.txt"
+
+# Paper trading: simulación de resultados de las señales.
+evaluation:
+  position_usd: 100     # capital virtual por posición (P&L en USD = % × esto)
+  entry_window_min: 240 # minutos para que se gatille la entrada
+  max_duration_min: 480 # duración máxima del trade antes de cerrar a mercado
+  # Comisiones por orden (se cobran 2 veces por trade: entrada + salida).
+  # El P&L USD del dashboard es NETO de estas comisiones.
+  crypto_fee_pct: 0.10      # Binance spot taker, % por lado
+  stock_fee_pct: 0.0        # IBKR US stocks no cobra %, cobra por acción...
+  stock_fee_min_usd: 1.00   # ...con mínimo USD 1 por orden (IBKR Pro fixed)
+
+indicators:
+  stochrsi_k: 3
+  stochrsi_d: 3
+  stochrsi_rsi_length: 14
+  stochrsi_stoch_length: 14
+  volume_sma: 20
+  swing_lookback: 2     # bars on each side to confirm a swing high/low

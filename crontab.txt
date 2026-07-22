@@ -1,0 +1,19 @@
+# Bavot — actualizado 2026-07-16 (A5.1 sizing por vol; B1 momentum relativo activada)
+# A5.1 Tendencia Diaria (crypto, mecanica, 0 tokens): diario 21:10 ART (post-cierre vela 1d UTC)
+10 21 * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python a5_daily_trend.py >> logs/cron.log 2>&1
+# B1 Momentum Relativo (crypto, mecanica, 0 tokens): diario 21:20; solo rebalancea si pasaron >=7 dias
+20 21 * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python b1_xsect.py >> logs/cron.log 2>&1
+# T1 Telegram (recolecta + interpreta LLM + evalua paper): cada 15 min
+*/15 * * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python t1.py >> logs/cron.log 2>&1
+# Notificador (vigila y avisa, nunca actua; macOS + Telegram): cada 30 min
+5,35 * * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python notify.py >> logs/cron.log 2>&1
+# Recolector de noticias (fase 1 solo-recolectar, 0 tokens): cada 30 min al :10/:40
+10,40 * * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python news_collector.py >> logs/cron.log 2>&1
+# Evaluador de señales (bot puro, 0 tokens): cada 15 min
+*/15 * * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python evaluator.py >> logs/cron.log 2>&1
+# Laboratorio de hipotesis (bot puro, 0 tokens): domingos 20:00; corre lo desbloqueado
+0 20 * * 0 cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python lab.py > logs/lab.log 2>&1
+# Loop de aprendizaje (bot puro, 0 tokens): diario 21:30, reporte a logs/learn.log
+30 21 * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python learn.py > logs/learn.log 2>&1
+# Recolector funding/OI (datos futuros Binance, 0 tokens): horario al minuto 35
+35 * * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python collect_futures_data.py >> logs/cron.log 2>&1
