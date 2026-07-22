@@ -9,9 +9,18 @@ scalping intradiario (velas vía IBKR y Binance + prompt a la API de
 Anthropic); esa infraestructura (main.py, analyzer.py, prompts/,
 evaluator) sigue disponible pero SIN estrategia LLM activa.
 
-NOTA: este archivo se reconstruyó el 2026-07-22 tras un truncado
-accidental (bug open("w") + self-read). Poner el proyecto bajo git es
-la protección pendiente contra esta clase de pérdida.
+## Git (desde 2026-07-22)
+
+- `origin` = https://github.com/agustinbava/bavot_v3.git (respaldo).
+- `moba` = server:scalp-analyzer con receive.denyCurrentBranch=
+  updateInstead → **deploy = `git push moba main`** (actualiza el
+  working tree de producción al instante).
+- Flujo: editar en la Mac → commit → push moba (deploy) → push origin
+  (respaldo). NUNCA commitear .env, *.session ni bavot.db (.gitignore
+  los cubre; verificar con `git status` ante la duda).
+- Contexto: el repo nació después de que un bug de edición truncara
+  CLAUDE.md (open("w") + self-read) sin backup posible. Que no se
+  repita: commit tras cada cambio significativo.
 
 ## PRIORIDAD: eficiencia de costos
 
