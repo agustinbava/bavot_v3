@@ -113,7 +113,8 @@ def build() -> Group:
             f"[{s['channel']}] {s['symbol']} {s['direction']} "
             f"entry {s['entry']:g} tp {s['tp']:g} sl {s['sl']:g} "
             f"→ {state}{dist}")
-    t1_body = "\n".join(t1_lines) if t1_lines else "sin señales todavía"
+    t1_body = Text("\n".join(t1_lines) if t1_lines
+                   else "sin señales todavía")
 
     return Group(
         Panel(header, box=box.ROUNDED),
