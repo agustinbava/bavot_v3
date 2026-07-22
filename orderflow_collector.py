@@ -85,8 +85,9 @@ def collect_day(conn, symbol: str, day: str) -> int:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--backfill", type=int, default=1,
-                    help="días hacia atrás (default 1 = ayer UTC)")
+    ap.add_argument("--backfill", type=int, default=2,
+                    help="días hacia atrás (default 2: Binance publica los "
+                         "archivos diarios con ~1 día de retraso)")
     args = ap.parse_args()
 
     cfg = load_config("config.yaml")
