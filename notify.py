@@ -99,9 +99,14 @@ def gather(conn) -> list[str]:
     except Exception:
         pass
 
-    # 5) T1: señales nuevas y cierres
+    # 5) T1: señales nuevas, gatillos de entrada y cierres
     try:
         for r in conn.execute("SELECT * FROM t1_signals").fetchall():
+            if (r["entry_at"] and r["status"] == "pending"
+                    and _once(conn, f"t1_entry_{r['id']}")):
+                msgs.append(f"🎯 T1 EN POSICIÓN: {r['symbol']} "
+                            f"{r['direction']} gatilló entry {r['entry']:g} "
+                            f"→ TP {r['tp']:g} / SL {r['sl']:g}")
             if _once(conn, f"t1_new_{r['id']}"):
                 msgs.append(f"📡 T1 señal nueva [{r['channel']}]: "
                             f"{r['symbol']} {r['direction']} entry "
