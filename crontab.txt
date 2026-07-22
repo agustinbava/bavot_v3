@@ -17,3 +17,5 @@
 30 21 * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python learn.py > logs/learn.log 2>&1
 # Recolector funding/OI (datos futuros Binance, 0 tokens): horario al minuto 35
 35 * * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python collect_futures_data.py >> logs/cron.log 2>&1
+# Dead-man switch (ping a healthchecks.io si el pipeline esta sano): cada 15 min
+7,22,37,52 * * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python heartbeat.py >> logs/cron.log 2>&1
