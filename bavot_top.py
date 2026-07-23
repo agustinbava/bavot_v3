@@ -108,35 +108,59 @@ def build() -> Group:
                       Text(d, style="green" if d == "LONG" else "red"),
                       f"${usd:.0f}", money(u))
 
-    t1_lines = []
+    def meter(direction, entry, sl, tp, px):
+        span = tp - sl
+        if not span or px is None:
+            return Text("—", style=DIM)
+        frac = min(max((px - sl) / span, 0.0), 1.0)
+        w = 9
+        idx = int(round(frac * (w - 1)))
+        mk = "O" if _CONSOLE else "●"
+        ch = "-" if _CONSOLE else "─"
+        col = "green" if frac > 0.6 else ("red" if frac < 0.4 else "yellow")
+        return Text.assemble(("SL ", "red"), (ch*idx, DIM), (mk, col),
+                             (ch*(w-1-idx), DIM), (" TP", "green"))
+
+    CHCOL = {"lady market": "cyan", "v.i.p de jack": "magenta",
+             "cripto with jack": "magenta"}
+    STCOL = {"tp": "green", "sl": "red", "expired": "yellow",
+             "invalidated": "yellow", "vetoed": "red", "not_triggered": DIM}
+    t1_t = Table(box=BOX_TABLE, expand=True, pad_edge=False,
+                 title="T1 — señales de Telegram (paper)", title_style="bold")
+    for col in ("canal", "símbolo", "dir", "entry", "precio", "SL↔TP",
+                "estado", "flot/PnL"):
+        t1_t.add_column(col, justify="right")
+    if not t1:
+        t1_t.add_row("—", "sin señales", "", "", "", "", "esperando", "")
     for s in t1:
-        state = s["status"]
-        if state == "pending":
-            state = "EN POSICIÓN" if s["entry_at"] else "esperando entry"
+        st = s["status"]
         px = prices.get(s["symbol"])
-        extra = ""
-        if px and s["status"] == "pending":
-            if s["entry_at"]:
+        mt = Text("—", style=DIM)
+        flo = Text("—", style=DIM)
+        if st == "pending" and s["entry_at"]:
+            st = "EN POSICIÓN"
+            mt = meter(s["direction"], s["entry"], s["sl"], s["tp"], px)
+            if px:
                 sign = 1 if s["direction"] == "LONG" else -1
-                u = (px - s["entry"]) / s["entry"] * sign * s["position_usd"]
-                span = s["tp"] - s["entry"]
-                prog = (px - s["entry"]) / span * 100 if span else 0
-                extra = f"  [{u:+.2f}$ | {prog:.0f}% hacia TP | px {px:g}]"
-            else:
-                extra = f"  (px {px:g}, {abs(px/s['entry']-1)*100:.1f}% del entry)"
-        t1_lines.append(
-            f"[{s['channel']}] {s['symbol']} {s['direction']} "
-            f"entry {s['entry']:g} tp {s['tp']:g} sl {s['sl']:g} "
-            f"→ {state}{extra}")
-    t1_body = Text("\n".join(t1_lines) if t1_lines
-                   else "sin señales todavía")
+                u = (px-s["entry"])/s["entry"]*sign*s["position_usd"]
+                flo = money(u)
+        elif st == "pending":
+            d = f"{abs(px/s['entry']-1)*100:.1f}%" if px else "?"
+            st = f"esperando ({d})"
+        elif s["pnl_usd"] is not None:
+            flo = money(s["pnl_usd"])
+        t1_t.add_row(
+            Text(s["channel"][:12], style=CHCOL.get(s["channel"], "white")),
+            s["symbol"].removesuffix("USDT"),
+            Text(s["direction"], style="green" if s["direction"]=="LONG" else "red"),
+            f"{s['entry']:g}", f"{px:g}" if px else "—", mt,
+            Text(st, style=STCOL.get(s["status"], "white")), flo)
 
     return Group(
         Panel(header, box=BOX_PANEL),
         eng_t,
         pos_t,
-        Panel(t1_body, title="T1 señales de Telegram", box=BOX_PANEL,
-              title_align="left"),
+        t1_t,
         Text(f"refresh {REFRESH_S}s — Ctrl-C para salir", style=DIM),
     )
 

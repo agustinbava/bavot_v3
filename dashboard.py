@@ -170,6 +170,18 @@ details.sigblock > summary::before { content: "▮ "; color: var(--accent1); }
   display: block; height: 100%; border-radius: 3px;
   background: linear-gradient(90deg, var(--accent1), var(--accent2));
 }
+.chip { display: inline-block; font-size: 11px; font-weight: 600;
+  padding: 1px 9px; border-radius: 10px; white-space: nowrap; }
+.chip.lady { background: rgba(79,157,247,.16); color: var(--accent1); }
+.chip.jack { background: rgba(176,110,240,.16); color: var(--accent2); }
+.chip.other { background: var(--grid); color: var(--ink-2); }
+.meter { position: relative; height: 8px; min-width: 96px; border-radius: 4px;
+  background: linear-gradient(90deg, rgba(239,68,68,.35), rgba(148,163,184,.12) 50%, rgba(34,197,94,.35)); }
+.meter .mk { position: absolute; top: -3px; width: 3px; height: 14px;
+  border-radius: 1px; background: var(--ink); box-shadow: 0 0 4px rgba(0,0,0,.4); }
+.meter .en { position: absolute; top: 0; width: 1px; height: 8px; background: var(--muted); opacity: .7; }
+.tprow { display: flex; align-items: center; gap: 8px; }
+.tprow small { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 34px; }
 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
 .cols details.sigblock { margin-bottom: 16px; }
 @media (max-width: 1150px) { .cols { grid-template-columns: 1fr; } }
@@ -612,6 +624,8 @@ def _t1_section() -> str:
     except Exception:
         pass
     wr = (f"{agg['w']/agg['cl']:.0%}" if agg["cl"] else "-")
+    pnl_v = agg["pnl"] or 0
+    pnl_c = "var(--good)" if pnl_v > 0 else ("var(--critical)" if pnl_v < 0 else "var(--ink)")
     tiles = (
         '<div class="tiles">'
         f'<div class="tile"><div class="v">{analyzed}</div>'
@@ -619,16 +633,29 @@ def _t1_section() -> str:
         f'<div class="tile"><div class="v">{agg["c"] or 0}</div>'
         '<div class="l">Señales interpretadas</div></div>'
         f'<div class="tile"><div class="v">{agg["p"] or 0}</div>'
-        '<div class="l">Vivas (esperando o en posición)</div></div>'
+        '<div class="l">Vivas (esperando / en posición)</div></div>'
         f'<div class="tile"><div class="v">{agg["cl"] or 0}</div>'
         '<div class="l">Cerradas</div></div>'
         f'<div class="tile"><div class="v">{wr}</div>'
         '<div class="l">Efectividad</div>'
         + (f'<div class="wbar"><i style="width:{agg["w"]/agg["cl"]*100:.0f}%"></i></div>' if agg["cl"] else "")
         + '</div>'
-        f'<div class="tile"><div class="v">${agg["pnl"]:+.2f}</div>'
+        f'<div class="tile"><div class="v" style="color:{pnl_c}">${pnl_v:+.2f}</div>'
         '<div class="l">P&L neto</div></div></div>'
     )
+
+    def _meter(direction, entry, sl, tp, px):
+        """Barra SL↔TP con marca del precio actual (0=SL, 1=TP)."""
+        span = tp - sl
+        if not span or px is None:
+            return "-"
+        pos = min(max((px - sl) / span, 0.0), 1.0) * 100
+        en = min(max((entry - sl) / span, 0.0), 1.0) * 100
+        return (f'<div class="meter"><span class="en" style="left:{en:.0f}%"></span>'
+                f'<span class="mk" style="left:calc({pos:.0f}% - 1px)"></span></div>')
+
+    ch_class = {"lady market": "lady", "v.i.p de jack": "jack",
+                "cripto with jack": "jack"}
     body = []
     for r in rows:
         color, label = SIGNAL_STATUS.get(r["status"], ("var(--muted)", r["status"]))
@@ -636,30 +663,31 @@ def _t1_section() -> str:
         sign = 1 if r["direction"] == "LONG" else -1
         px_label = f"{px:g}" if px else "-"
         flo_html = "-"
+        meter = "-"
         if r["status"] == "pending" and r["entry_at"]:
             label = "▶ en posición"
+            meter = _meter(r["direction"], r["entry"], r["sl"], r["tp"], px)
             if px:
                 u = (px - r["entry"]) / r["entry"] * sign / 100 * \
                     r["position_usd"] * 100
-                span = (r["tp"] - r["entry"])
-                prog = (px - r["entry"]) / span * 100 if span else 0
-                label += f" · {prog:.0f}% hacia TP"
                 fc = "var(--good)" if u >= 0 else "var(--critical)"
                 flo_html = f"<span style='color:{fc}'>{u:+.2f} $</span>"
         elif r["status"] == "pending" and px:
             dist = abs(px / r["entry"] - 1) * 100
             label = f"… esperando entry ({dist:.1f}%)"
         pnl = f"{r['pnl_usd']:+.2f} $" if r["pnl_usd"] is not None else flo_html
+        cc = ch_class.get(r["channel"], "other")
         body.append(
             "<tr>"
             f"<td>{html.escape(r['msg_date'][:16].replace('T', ' '))}</td>"
-            f"<td>{html.escape(r['channel'])}</td>"
+            f"<td><span class='chip {cc}'>{html.escape(r['channel'])}</span></td>"
             f"<td><strong>{html.escape(r['symbol'])}</strong></td>"
             f"<td>{_badge(r['direction'])}</td>"
             f"<td class='num'>{r['entry']:g}</td>"
             f"<td class='num'>{r['sl']:g}</td>"
             f"<td class='num'>{r['tp']:g}</td>"
             f"<td class='num'>{px_label}</td>"
+            f"<td>{meter}</td>"
             f"<td><span style='color:{color}'>{label}</span>"
             f"{' <span class=\"tag\">defaults</span>' if r['defaults_used'] else ''}</td>"
             f"<td class='num'>{pnl}</td>"
@@ -669,7 +697,8 @@ def _t1_section() -> str:
         '<div class="scrollbox">'
         "<table><thead><tr><th>Mensaje</th><th>Canal</th><th>Símbolo</th>"
         "<th>Dir</th><th>Entry</th><th>SL</th><th>TP</th><th>Precio</th>"
-        "<th>Estado</th><th>Flotante / P&L</th></tr></thead><tbody>" + "".join(body)
+        "<th>SL ↔ TP</th><th>Estado</th><th>Flotante / P&L</th>"
+        "</tr></thead><tbody>" + "".join(body)
         + "</tbody></table></div>"
     ) if body else ('<div class="empty">Sin señales todavía — T1 escucha los '
                     'canales cada 15 min (forward-only desde 2026-07-18).</div>')
