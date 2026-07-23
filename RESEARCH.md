@@ -531,3 +531,22 @@ LECCIÓN: sin walk-forward + robustez estadística, 2 falsos positivos de 62
 (~3%) se habrían aceptado como reales — y donchian_exit habría pasado hasta
 los gates mecánicos. La verificación adversarial (no sólo el umbral) es lo
 que la mató. NO re-testear estas 13 familias sin datos nuevos.
+
+## Pairs / cointegración (candidato a 3er motor) — RECHAZADO (2026-07-23)
+
+Señal nueva: reversión del spread entre pares cointegrados. Selección de
+pares SÓLO en TRAIN por half-life (OU), corr>0.5, sin doble-dipping.
+Dólar-neutral $100/pata, z rolling 60d, fees 0.05%/lado. 29 monedas,
+203 train / 203 test.
+- TRAIN espectacular (Sharpe 1.88→2.91 según k), TEST NEGATIVO en todas
+  las variantes (-0.75 a -0.13) y param-inestable (entry z 1.5/2/2.5 →
+  +0.03/-0.40/-0.86). Espejismo puro de sesgo de selección.
+- Causa: la cointegración en crypto NO sobrevive fuera de muestra (los
+  pares dejan de revertir por regímenes + pumps/dumps idiosincráticos).
+- DATO ÚTIL: corr con A5.1 = -0.13 (genuinamente baja). Confirma que un
+  3er motor market-neutral SÍ diversificaría — el concepto es correcto,
+  la FUENTE (spreads de precio) no tiene edge estable.
+CONCLUSIÓN GENERAL (tras herramientas técnicas + stat-arb): el edge del
+PRECIO diario de este universo está agotado. Un 3er motor real debe venir
+de DATOS nuevos (order flow, OI, sentiment — ya recolectando), no de más
+matemática sobre el precio. NO re-testear pairs sin datos/enfoque nuevo.
