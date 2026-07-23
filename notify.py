@@ -27,7 +27,7 @@ _SCHEMA = """
 CREATE TABLE IF NOT EXISTS notify_state (key TEXT PRIMARY KEY, value TEXT);
 """
 
-CLOSED = ("tp", "sl", "ambiguous", "expired", "not_triggered")
+CLOSED = ("tp", "sl", "ambiguous", "expired", "not_triggered", "invalidated")
 
 
 def _today() -> str:

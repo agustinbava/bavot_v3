@@ -386,6 +386,8 @@ SIGNAL_STATUS = {
     "expired": ("var(--warning)", "◔ expirada"),
     "pending": ("var(--muted)", "… pendiente"),
     "not_triggered": ("var(--muted)", "– sin gatillar"),
+    "invalidated": ("var(--warning)", "⊘ anulada (condición)"),
+    "vetoed": ("var(--serious)", "⊗ vetada (auditor)"),
     "invalid": ("var(--serious)", "! inválida"),
 }
 

@@ -49,8 +49,15 @@ def simulate_signal(
     candles: list[Candle], signal_ts: int, now_ts: int,
     entry_window_s: int = ENTRY_WINDOW_MIN * 60,
     max_duration_s: int = MAX_DURATION_MIN * 60,
+    invalidation: float | None = None,
 ) -> SimResult:
-    """Replay one signal over 1m candles. Pure function — unit-testable."""
+    """Replay one signal over 1m candles. Pure function — unit-testable.
+
+    Si `invalidation` no es None, una señal condicional se ANULA cuando el
+    precio cruza ese nivel ANTES de gatillar la entrada (p.ej. un breakout
+    que queda muerto si el precio cae al nivel de invalidación sin romper).
+    Para longs cruza hacia abajo; para shorts, hacia arriba.
+    """
     is_long = direction == "LONG"
     entry_deadline = signal_ts + entry_window_s
     entered_at: int | None = None
@@ -62,7 +69,14 @@ def simulate_signal(
         if entered_at is None:
             if ts > entry_deadline:
                 return SimResult("not_triggered")
-            if low <= entry <= high:
+            hit_entry = low <= entry <= high
+            if invalidation is not None and not hit_entry:
+                crossed = (low <= invalidation) if is_long else (high >= invalidation)
+                if crossed:
+                    return SimResult(
+                        "invalidated", note="condición anulada antes de "
+                        "gatillar la entrada")
+            if hit_entry:
                 entered_at = ts
                 # fall through: this same candle can also resolve the trade
             else:

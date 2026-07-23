@@ -53,12 +53,20 @@ Si el mensaje contiene una idea operable sobre UNA criptomoneda que cotiza \
 en Binance contra USDT, devolvé:
 {"signal": true, "symbol": "ETHUSDT", "direction": "LONG"|"SHORT", \
 "entry": <número, o null si es a mercado>, "sl": <número o null>, \
-"tp": <número o null>, "reason": "<máx 12 palabras>"}
+"tp": <número o null>, "entry_type": "breakout"|"limit"|"market", \
+"invalidation": <número o null>, "reason": "<máx 12 palabras>"}
 
 Reglas:
-- "si supera/rompe/pasa X" → LONG con entry X. "si pierde/quiebra X" → \
-SHORT con entry X. Zona (p.ej. 1875-1890) que debe superar → entry = borde \
-superior; que debe defender → SHORT si la pierde, entry = borde inferior.
+- "si supera/rompe/pasa X" → LONG, entry X, entry_type "breakout". "si \
+pierde/quiebra X" → SHORT, entry X, entry_type "breakout". Zona (p.ej. \
+1875-1890) que debe superar → entry = borde superior; que debe defender → \
+SHORT si la pierde, entry = borde inferior.
+- entry_type: "breakout" si la entrada es un gatillo a romper (más allá \
+del precio actual); "limit" si es esperar un retroceso a un nivel; \
+"market" si es entrar ya.
+- invalidation: un precio que ANULA el setup si se toca ANTES de entrar \
+(p.ej. un breakout alcista queda muerto si primero cae a X). Sólo si el \
+mensaje lo implica; si no, null.
 - Sólo niveles que el mensaje da explícitamente; NUNCA inventes números.
 - Stocks, índices, oro, forex, comentarios generales, chistes, resúmenes \
 de mercado sin nivel operable, o marketing → {"signal": false}.
@@ -91,10 +99,18 @@ CREATE TABLE IF NOT EXISTS t1_signals (
     entry_at TEXT, exit_at TEXT, exit_price REAL,
     pnl_usd REAL, fees_usd REAL,
     reason TEXT, raw_msg TEXT,
+    entry_type TEXT, invalidation REAL,
     UNIQUE(channel, msg_id)
 );
 CREATE TABLE IF NOT EXISTS t1_state (key TEXT PRIMARY KEY, value TEXT);
 """
+
+
+def _migrate(conn) -> None:
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(t1_signals)")]
+    for col, decl in (("entry_type", "TEXT"), ("invalidation", "REAL")):
+        if col not in cols:
+            conn.execute(f"ALTER TABLE t1_signals ADD COLUMN {col} {decl}")
 
 
 def price_of(symbol: str) -> float | None:
@@ -198,6 +214,13 @@ def interpret_new(conn) -> None:
             if tp is None:
                 tp = entry * (1 + sign * DEF_TP_PCT)
                 used.append("tp")
+            # invalidación: explícita del canal, o el SL para breakouts
+            # (setup condicional muerto si toca el SL antes de gatillar)
+            entry_type = parsed.get("entry_type") or "market"
+            invalidation = parsed.get("invalidation")
+            if invalidation is None and entry_type == "breakout":
+                invalidation = float(sl)
+            invalidation = float(invalidation) if invalidation is not None else None
             ok, why = verify_signal(client, cfg.anthropic.model,
                                     m["text"], parsed)
             budget -= 1
@@ -206,13 +229,13 @@ def interpret_new(conn) -> None:
                 """INSERT OR IGNORE INTO t1_signals
                    (channel, msg_id, msg_date, symbol, direction, entry,
                     sl, tp, defaults_used, position_usd, status, reason,
-                    raw_msg)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    raw_msg, entry_type, invalidation)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (channel, m["msg_id"], m["msg_date"], sym, direction,
                  entry, float(sl), float(tp), ",".join(used) or None,
                  POSITION_USD, status,
                  (parsed.get("reason") or "") + (f" | VETADA: {why}" if not ok else ""),
-                 m["text"][:500]))
+                 m["text"][:500], entry_type, invalidation))
             if ok:
                 print(f"T1 señal: {channel} → {sym} {direction} "
                       f"entry {entry:g} sl {sl:g} tp {tp:g} "
@@ -248,10 +271,11 @@ def evaluate_open(conn) -> None:
                         float(k[3]), float(k[4])) for k in resp.json()]
         except Exception:
             continue
+        inval = r["invalidation"] if "invalidation" in r.keys() else None
         res = simulate_signal(
             r["direction"], r["entry"], r["sl"], r["tp"], candles,
             sig_ts, now_ts, entry_window_s=ENTRY_WINDOW_S,
-            max_duration_s=MAX_DURATION_S)
+            max_duration_s=MAX_DURATION_S, invalidation=inval)
         entry_at = (datetime.fromtimestamp(res.entry_ts, tz=timezone.utc)
                     .isoformat(timespec="seconds") if res.entry_ts else None)
         if res.status == "pending":
@@ -279,6 +303,7 @@ def main() -> None:
     asyncio.run(collect())
     with connect() as conn:
         conn.executescript(_SCHEMA)
+        _migrate(conn)
         interpret_new(conn)
         evaluate_open(conn)
         n = conn.execute("SELECT COUNT(*) c FROM t1_signals").fetchone()["c"]
