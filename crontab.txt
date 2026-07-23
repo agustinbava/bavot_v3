@@ -23,3 +23,5 @@
 30 3 * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python orderflow_collector.py >> logs/cron.log 2>&1
 # Etiquetador de noticias (Ollama local, $0): horario al :50
 50 * * * * cd /Users/agustingimenezbava/Documents/scalp-analyzer && .venv/bin/python news_tagger.py >> logs/cron.log 2>&1
+# Digest semanal a Telegram (bot puro, 0 tokens): domingos 21:45
+45 21 * * 0 .venv/bin/python digest.py >> logs/cron.log 2>&1

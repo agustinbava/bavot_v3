@@ -597,6 +597,35 @@ def _charts_section() -> str:
     )
 
 
+def _gates_section() -> str:
+    try:
+        import gates as _g
+        with __import__("storage").connect() as conn:
+            gs = _g.gate_status(conn)
+    except Exception:
+        return ""
+    met = sum(1 for x in gs if x["met"])
+    rows = []
+    for x in gs:
+        icon = ('<span style="color:var(--good)">✓</span>' if x["met"]
+                else '<span style="color:var(--muted)">○</span>')
+        bar = ""
+        if x["progress"] is not None and not x["met"]:
+            bar = (f'<div class="wbar" style="max-width:160px;margin-top:5px">'
+                   f'<i style="width:{x["progress"]*100:.0f}%"></i></div>')
+        rows.append(
+            '<div style="padding:8px 0;border-bottom:1px solid var(--grid)">'
+            f'<div style="display:flex;gap:10px;align-items:baseline">'
+            f'<span style="font-size:15px">{icon}</span>'
+            f'<strong style="font-size:13px">{html.escape(x["name"])}</strong></div>'
+            f'<div style="color:var(--ink-2);font-size:12px;margin-left:26px">'
+            f'{html.escape(x["detail"])}</div>{bar}</div>')
+    return (
+        '<details class="sigblock">'
+        f"<summary>Go-live — progreso hacia dinero real ({met}/5 gates)</summary>"
+        '<div style="padding:4px 14px 12px">' + "".join(rows) + "</div></details>")
+
+
 def _t1_section() -> str:
     with __import__("storage").connect() as conn:
         try:
@@ -976,7 +1005,7 @@ def render_a5_page() -> str:
         '<a href="/?view=full">histórico completo (estrategias anteriores)</a>'
         '<button id="theme-toggle" title="Cambiar tema">◐ tema</button></div>'
     )
-    return _page_shell(header, _charts_section() + '<div class="cols">' + _a5_section() + _b1_section() + '</div>' + _t1_section())
+    return _page_shell(header, _charts_section() + _gates_section() + '<div class="cols">' + _a5_section() + _b1_section() + '</div>' + _t1_section())
 
 
 def render_page(selected_date: str | None) -> str:
