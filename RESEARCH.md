@@ -466,3 +466,22 @@ TEST (~-$0.10/trade). El "backtest" del video es cinta de semanas
 elegidas + descargo final. Nota: el ORB académico (Zarattini & Aziz
 2023) usa otro diseño (OR 5m, hold a cierre, sizing por vol) — sería
 hipótesis aparte si algún día interesa.
+
+## Stop de catástrofe — RECHAZADO en TODAS sus formas (2026-07-23)
+
+Pedido tras DEXE (-90% sin salir). 3 formas, 29 monedas, TRAIN/TEST:
+1. Diaria (salir al cierre del día -40%): peor trade IGUAL — DEXE cayó
+   -82% dentro de una vela diaria, salir al cierre llega tarde.
+2. Intradía por low diario (salir al nivel -X%): EMPEORA TEST y agranda
+   el peor trade — vende el piso de mechazos que rebotan.
+3. -X% en 6h/12h (data horaria, la más selectiva): base gana TRAIN
+   (0.88 vs ≤0.87 todas); peor trade IGUAL -$31.6. cat-40%-6h "gana"
+   TEST (1.75) pero PERDIÓ TRAIN = mirage de multiple-testing.
+Path real de DEXE: 2 días calma (34-36), pico +14% (squeeze), luego
+-44% en 12h a las 09:00 UTC y SIGUIÓ cayendo a -83%. No rebotó — por eso
+un stop la habría ayudado. Pero de 6-13 disparos DEXE fue 1; los demás
+rebotaron. No se distingue en el momento.
+VEREDICTO: ningún stop rescata A5.1. DEXE estuvo calma antes de reventar
+(tail-risk invisible para vol30). Camino constructivo: hipótesis
+tail_risk_sizing (achicar en la ENTRADA a monedas de cola gruesa, no
+salir durante el crash). NO reproponer stops en ninguna forma.

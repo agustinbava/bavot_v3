@@ -17,3 +17,6 @@ data/
 *.tgz
 crontab.ubuntu
 crontab.server
+
+# memoria viva del agente learn (runtime, se reescribe a diario)
+agents/learn_memory.md
