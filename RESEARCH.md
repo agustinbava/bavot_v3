@@ -496,3 +496,38 @@ virgen); para reincidentes, el vol-sizing (vol post-crash enorme) o el
 flip del cruce ya actúan. La protección real ya está desplegada:
 vol-sizing + tope estructural ~3% por moneda + cruce de salida. El riesgo
 de primer-crash es irreducible y ya acotado al ~3% del libro. NO reproponer.
+
+## Búsqueda multi-agente de variantes de A5.1 — 0/13 sobreviven (2026-07-23)
+
+Workflow Ultracode: 13 familias de herramientas técnicas NUEVAS (no en
+lista negra) × grillas = 62 combinaciones, sobre A5.1. Protocolo estricto
+(elegir por TRAIN, juzgar por TEST) + verificación adversarial
+(walk-forward 3-fold + robustez de grilla, agentes instruidos para refutar).
+Base: trainSh 1.567 / testSh 0.552.
+
+Familias: adx_filter, donchian, supertrend, bb_width_filter, rsi_filter,
+volume_confirm, keltner, aroon_confirm, choppiness_filter, roc_confirm,
+ma_slope_filter, donchian_exit, adx_plus_volume (combinación).
+
+Multiple-testing visible en TRAIN: con 62 intentos, varias baten a base por
+azar (roc_confirm 1.793, adx_filter 1.599, choppiness 1.597, donchian_exit
+1.589, supertrend 1.586). Sólo 2 pasaron el gate preliminar (n_beat_both>=1):
+adx_filter y donchian_exit. AMBAS desenmascaradas como MIRAGE:
+- adx_filter: gana 2/3 folds pero por márgenes al filo; robustez falla
+  (grid_frac 0.11 — sólo 1 de 9 combos bate a base en test, justo el
+  optimizado en train). Espejismo clásico.
+- donchian_exit: headline pasaría los gates mecánicos (folds 3/3, grid_frac
+  1.0) PERO el verificador adversarial lo refutó: corr 0.9992 con base
+  (casi un clon, difiere 16.8% de días), edge estadísticamente insignificante
+  (t full 1.64, TEST 1.63, per-fold 1.02/1.26/0.72, todos <1.96), inversión
+  train/test (mejor en train = peor en test), edge concentrado en outliers
+  (top-5 días = 65% del diff). Regime/outlier luck, no edge robusto.
+
+VEREDICTO: 0/13 CONFIRMED. A5.1 sigue en su frontera eficiente — NINGUNA
+herramienta técnica (ADX/Donchian/Supertrend/Bollinger/RSI/volumen/Keltner/
+Aroon/Choppiness/ROC/pendiente/salida-Donchian/combinaciones) agrega edge
+real. Agregarlas sumaría complejidad y riesgo de sobreajuste sin retorno.
+LECCIÓN: sin walk-forward + robustez estadística, 2 falsos positivos de 62
+(~3%) se habrían aceptado como reales — y donchian_exit habría pasado hasta
+los gates mecánicos. La verificación adversarial (no sólo el umbral) es lo
+que la mató. NO re-testear estas 13 familias sin datos nuevos.
