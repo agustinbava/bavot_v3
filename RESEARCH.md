@@ -454,3 +454,15 @@ explicó el costo (falsificar el track record que alimenta los gates de
 go-live) y NO se borró nada. Pendiente su decisión sobre la excepción
 de lista firmada; mientras, las reglas la manejan (B1 rota 22/7, cruce
 A5.1 en días, refresh de octubre por volumen).
+
+## ORB "first candle rule" (video YouTube) — RECHAZADA (2026-07-23, gratis)
+
+Mecanizada fiel al video: OR 15m apertura NY, confirmación cierre 5m,
+stop en la vela de señal, TP 1:2, 1 trade/día. QQQ 60d: bruto -$3.77
+(wr 27%). BTC/ETH sesión NY 2 años (1,453 trades): bruto ~$0 con wr 33%
+= EXACTAMENTE el breakeven matemático de un RR 1:2 → las reglas no
+contienen información. Con fees, pérdida pareja e idéntica en TRAIN y
+TEST (~-$0.10/trade). El "backtest" del video es cinta de semanas
+elegidas + descargo final. Nota: el ORB académico (Zarattini & Aziz
+2023) usa otro diseño (OR 5m, hold a cierre, sizing por vol) — sería
+hipótesis aparte si algún día interesa.

@@ -602,6 +602,13 @@ def _t1_section() -> str:
                 "COALESCE(SUM(pnl_usd),0) pnl FROM t1_signals").fetchone()
         except Exception:
             return ""
+    prices = {}
+    try:
+        import requests as _rq
+        prices = {d["symbol"]: float(d["price"]) for d in _rq.get(
+            "https://api.binance.com/api/v3/ticker/price", timeout=5).json()}
+    except Exception:
+        pass
     wr = (f"{agg['w']/agg['cl']:.0%}" if agg["cl"] else "-")
     tiles = (
         '<div class="tiles">'
@@ -623,9 +630,24 @@ def _t1_section() -> str:
     body = []
     for r in rows:
         color, label = SIGNAL_STATUS.get(r["status"], ("var(--muted)", r["status"]))
+        px = prices.get(r["symbol"])
+        sign = 1 if r["direction"] == "LONG" else -1
+        px_label = f"{px:g}" if px else "-"
+        flo_html = "-"
         if r["status"] == "pending" and r["entry_at"]:
             label = "▶ en posición"
-        pnl = f"{r['pnl_usd']:+.2f} $" if r["pnl_usd"] is not None else "-"
+            if px:
+                u = (px - r["entry"]) / r["entry"] * sign / 100 * \
+                    r["position_usd"] * 100
+                span = (r["tp"] - r["entry"])
+                prog = (px - r["entry"]) / span * 100 if span else 0
+                label += f" · {prog:.0f}% hacia TP"
+                fc = "var(--good)" if u >= 0 else "var(--critical)"
+                flo_html = f"<span style='color:{fc}'>{u:+.2f} $</span>"
+        elif r["status"] == "pending" and px:
+            dist = abs(px / r["entry"] - 1) * 100
+            label = f"… esperando entry ({dist:.1f}%)"
+        pnl = f"{r['pnl_usd']:+.2f} $" if r["pnl_usd"] is not None else flo_html
         body.append(
             "<tr>"
             f"<td>{html.escape(r['msg_date'][:16].replace('T', ' '))}</td>"
@@ -635,6 +657,7 @@ def _t1_section() -> str:
             f"<td class='num'>{r['entry']:g}</td>"
             f"<td class='num'>{r['sl']:g}</td>"
             f"<td class='num'>{r['tp']:g}</td>"
+            f"<td class='num'>{px_label}</td>"
             f"<td><span style='color:{color}'>{label}</span>"
             f"{' <span class=\"tag\">defaults</span>' if r['defaults_used'] else ''}</td>"
             f"<td class='num'>{pnl}</td>"
@@ -643,8 +666,8 @@ def _t1_section() -> str:
     table_html = (
         '<div class="scrollbox">'
         "<table><thead><tr><th>Mensaje</th><th>Canal</th><th>Símbolo</th>"
-        "<th>Dir</th><th>Entry</th><th>SL</th><th>TP</th><th>Estado</th>"
-        "<th>P&L</th></tr></thead><tbody>" + "".join(body)
+        "<th>Dir</th><th>Entry</th><th>SL</th><th>TP</th><th>Precio</th>"
+        "<th>Estado</th><th>Flotante / P&L</th></tr></thead><tbody>" + "".join(body)
         + "</tbody></table></div>"
     ) if body else ('<div class="empty">Sin señales todavía — T1 escucha los '
                     'canales cada 15 min (forward-only desde 2026-07-18).</div>')

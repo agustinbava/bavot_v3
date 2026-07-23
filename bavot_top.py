@@ -114,12 +114,20 @@ def build() -> Group:
         if state == "pending":
             state = "EN POSICIÓN" if s["entry_at"] else "esperando entry"
         px = prices.get(s["symbol"])
-        dist = (f"  (px {px:g}, {abs(px/s['entry']-1)*100:.1f}% del entry)"
-                if px and not s["entry_at"] and s["status"] == "pending" else "")
+        extra = ""
+        if px and s["status"] == "pending":
+            if s["entry_at"]:
+                sign = 1 if s["direction"] == "LONG" else -1
+                u = (px - s["entry"]) / s["entry"] * sign * s["position_usd"]
+                span = s["tp"] - s["entry"]
+                prog = (px - s["entry"]) / span * 100 if span else 0
+                extra = f"  [{u:+.2f}$ | {prog:.0f}% hacia TP | px {px:g}]"
+            else:
+                extra = f"  (px {px:g}, {abs(px/s['entry']-1)*100:.1f}% del entry)"
         t1_lines.append(
             f"[{s['channel']}] {s['symbol']} {s['direction']} "
             f"entry {s['entry']:g} tp {s['tp']:g} sl {s['sl']:g} "
-            f"→ {state}{dist}")
+            f"→ {state}{extra}")
     t1_body = Text("\n".join(t1_lines) if t1_lines
                    else "sin señales todavía")
 
