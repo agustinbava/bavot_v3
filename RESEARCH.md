@@ -485,3 +485,14 @@ VEREDICTO: ningún stop rescata A5.1. DEXE estuvo calma antes de reventar
 (tail-risk invisible para vol30). Camino constructivo: hipótesis
 tail_risk_sizing (achicar en la ENTRADA a monedas de cola gruesa, no
 salir durante el crash). NO reproponer stops en ninguna forma.
+
+## tail_risk_sizing — RECHAZADA (2026-07-23)
+
+Penalizar en la entrada monedas de cola gruesa (peor día 365d) además del
+vol-sizing. TRAIN/TEST 29 monedas: base $887/0.66 vs tail $867/0.65; peor
+trade IGUAL -$62.8; drawdown ~igual. Lección: no se puede dimensionar para
+el PRIMER crash de una moneda (el tail histórico es ciego a un crash
+virgen); para reincidentes, el vol-sizing (vol post-crash enorme) o el
+flip del cruce ya actúan. La protección real ya está desplegada:
+vol-sizing + tope estructural ~3% por moneda + cruce de salida. El riesgo
+de primer-crash es irreducible y ya acotado al ~3% del libro. NO reproponer.
